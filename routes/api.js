@@ -14,6 +14,8 @@ var ObjectId = require('mongodb').ObjectId;
 const MONGODB_CONNECTION_STRING = process.env.DB;
 const mongoose = require('mongoose');
 const Book = require('../schema/Book')
+const mongodb = require("mongodb")
+var objectID = require('mongodb').ObjectID
 //Example connection: MongoClient.connect(MONGODB_CONNECTION_STRING, function(err, db) {});
 
 module.exports = function (app) {
@@ -38,6 +40,7 @@ module.exports = function (app) {
     
     .post(async function (req, res){
       var title = req.body.title;
+      if (!title) return res.send('no title provided')
       try {
         const newBook = await Book.create({title});
         res.json({
@@ -46,7 +49,7 @@ module.exports = function (app) {
         })
       }
       catch {
-        console.log('an error occured. could not save new book')
+        res.send('an error occured. could not save new book')
       }  
     })
     
@@ -63,16 +66,22 @@ module.exports = function (app) {
   app.route('/api/books/:id')
     .get(async function (req, res){
       var bookid = req.params.id;
+      if (!objectID.isValid(bookid)) {
+        return res.send('not a valid id')
+      }
+
       await Book.findById(bookid, (err, book) => {
         if (err) {
-           res.send('no book exists')
+          return res.send('no book exists')
+        } else if (!book) {
+         return res.send('no book found')
         } else {
-        res.json({
+          res.json({
           _id: book._id,
           title: book.title,
           comments: book.comments
           })    
-       }
+        }
       })
     })
     
